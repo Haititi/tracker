@@ -151,6 +151,7 @@ struct _TrackerDataProviderIface {
 	gboolean              (* monitor_remove)     (TrackerDataProvider    *data_provider,
 	                                              GFile                  *container,
 	                                              gboolean                recursively,
+	                                              gboolean                children_only,
 	                                              GError                **error);
 	gboolean              (* monitor_move)       (TrackerDataProvider    *data_provider,
 	                                              GFile                  *container_from,
@@ -235,6 +236,7 @@ gboolean           tracker_data_provider_monitor_add     (TrackerDataProvider  *
 gboolean           tracker_data_provider_monitor_remove  (TrackerDataProvider  *data_provider,
                                                           GFile                *container,
                                                           gboolean              recursively,
+                                                          gboolean              children_only,
                                                           GError              **error);
 gboolean           tracker_data_provider_monitor_move    (TrackerDataProvider  *data_provider,
                                                           GFile                *container_from,

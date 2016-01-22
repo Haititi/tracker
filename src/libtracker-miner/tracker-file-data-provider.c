@@ -368,6 +368,7 @@ static gboolean
 file_data_provider_monitor_remove (TrackerDataProvider  *data_provider,
                                    GFile                *container,
                                    gboolean              recursively,
+                                   gboolean              children_only,
                                    GError              **error)
 {
 	TrackerFileDataProvider *fdp;
@@ -377,7 +378,11 @@ file_data_provider_monitor_remove (TrackerDataProvider  *data_provider,
 	fdp = TRACKER_FILE_DATA_PROVIDER (data_provider);
 
 	if (G_LIKELY (recursively)) {
-		return tracker_monitor_remove_recursively (fdp->monitor, container);
+		if (G_LIKELY (children_only)) {
+			return tracker_monitor_remove_children_recursively (fdp->monitor, container);
+		} else {
+			return tracker_monitor_remove_recursively (fdp->monitor, container);
+		}
 	} else {
 		return tracker_monitor_remove (fdp->monitor, container);
 	}

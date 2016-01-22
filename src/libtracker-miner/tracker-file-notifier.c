@@ -264,7 +264,7 @@ crawler_check_directory_contents_cb (TrackerCrawler *crawler,
 		if (add_monitor) {
 			tracker_data_provider_monitor_add (priv->data_provider, canonical, NULL);
 		} else {
-			tracker_data_provider_monitor_remove (priv->data_provider, canonical, FALSE, NULL);
+			tracker_data_provider_monitor_remove (priv->data_provider, canonical, FALSE, FALSE, NULL);
 		}
 	}
 
@@ -1200,12 +1200,14 @@ monitor_item_deleted_cb (TrackerDataProvider *data_provider,
 
 	/* Remove monitors if any */
 	if (is_directory) {
-		if (tracker_indexing_tree_file_is_root (indexing_tree, file)) {
-			tracker_monitor_remove_children_recursively (priv->monitor,
-		                                                     file);
-		} else {
-			tracker_monitor_remove_recursively (priv->monitor, file);
-		}
+		gboolean children_only;
+
+		children_only = tracker_indexing_tree_file_is_root (indexing_tree, file);
+		tracker_data_provider_monitor_remove (priv->data_provider,
+		                                      file,
+		                                      TRUE,
+		                                      children_only,
+		                                      NULL);
 	}
 
 	if (!tracker_indexing_tree_file_is_indexable (indexing_tree,
@@ -1290,7 +1292,7 @@ monitor_item_moved_cb (TrackerDataProvider *data_provider,
 	if (!is_source_monitored) {
 		if (is_directory) {
 			/* Remove monitors if any */
-			tracker_data_provider_monitor_remove (priv->data_provider, file, TRUE, NULL);
+			tracker_data_provider_monitor_remove (priv->data_provider, file, TRUE, FALSE, NULL);
 
 			/* If should recurse, crawl other_file, as content is "new" */
 			file = tracker_file_system_get_file (priv->file_system,
@@ -1331,6 +1333,7 @@ monitor_item_moved_cb (TrackerDataProvider *data_provider,
 				tracker_data_provider_monitor_remove (priv->data_provider,
 				                                      file,
 				                                      TRUE,
+				                                      FALSE,
 				                                      NULL);
 			}
 
@@ -1361,6 +1364,7 @@ monitor_item_moved_cb (TrackerDataProvider *data_provider,
 				tracker_data_provider_monitor_remove (priv->data_provider,
 				                                      file,
 				                                      TRUE,
+				                                      FALSE,
 				                                      NULL);
 			}
 
@@ -1512,7 +1516,7 @@ indexing_tree_directory_removed (TrackerIndexingTree *indexing_tree,
 
 	/* Remove monitors if any */
 	/* FIXME: How do we handle this with 3rd party data_providers? */
-	tracker_data_provider_monitor_remove (priv->data_provider, directory, TRUE, NULL);
+	tracker_data_provider_monitor_remove (priv->data_provider, directory, TRUE, FALSE, NULL);
 
 	/* Remove all files from cache */
 	tracker_file_system_forget_files (priv->file_system, directory,

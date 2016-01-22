@@ -458,6 +458,7 @@ tracker_data_provider_monitor_add (TrackerDataProvider  *data_provider,
  * @data_provider: a #TrackerDataProvider
  * @container: a #GFile
  * @recursively: Remove monitors on all containers below @container too
+ * @children_only: if @recursively is %TRUE, Remove all monitors but @container
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Tells @data_provider to stop monitoring changes on @container. This
@@ -474,6 +475,7 @@ gboolean
 tracker_data_provider_monitor_remove (TrackerDataProvider  *data_provider,
                                       GFile                *container,
                                       gboolean              recursively,
+                                      gboolean              children_only,
                                       GError              **error)
 {
 	TrackerDataProviderIface *iface;
@@ -491,7 +493,7 @@ tracker_data_provider_monitor_remove (TrackerDataProvider  *data_provider,
 		return FALSE;
 	}
 
-	return (* iface->monitor_remove) (data_provider, container, recursively, error);
+	return (* iface->monitor_remove) (data_provider, container, recursively, children_only, error);
 }
 
 /**
