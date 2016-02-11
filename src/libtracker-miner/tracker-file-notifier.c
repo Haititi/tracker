@@ -592,6 +592,7 @@ crawl_directory_in_current_root (TrackerFileNotifier *notifier)
 	TrackerFileNotifierPrivate *priv = notifier->priv;
 	gint depth;
 	GFile *directory;
+	gboolean started;
 
 	if (!priv->current_index_root)
 		return FALSE;
@@ -612,10 +613,23 @@ crawl_directory_in_current_root (TrackerFileNotifier *notifier)
 		depth = MAX_DEPTH;
 	}
 
-	return tracker_crawler_start (priv->crawler,
-	                              directory,
-	                              priv->current_index_root->flags,
-	                              depth);
+	do {
+		started = tracker_crawler_start (priv->crawler,
+		                                 directory,
+		                                 priv->current_index_root->flags,
+		                                 depth);
+		if (started) {
+			break;
+		}
+
+		/* try next pending directory */
+		g_object_unref (directory);
+		directory = g_queue_pop_head (priv->current_index_root->pending_dirs);
+		priv->current_index_root->current_dir = directory;
+
+	} while (directory);
+
+	return started;
 }
 
 static void
