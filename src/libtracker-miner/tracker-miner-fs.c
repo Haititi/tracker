@@ -201,6 +201,7 @@ struct _TrackerMinerFSPrivate {
 
 	/* File properties */
 	GQuark quark_ignore_file;
+	GQuark quark_remove_file;
 	GQuark quark_attribute_updated;
 	GQuark quark_directory_found_crawling;
 	GQuark quark_reentry_counter;
@@ -718,6 +719,7 @@ tracker_miner_fs_init (TrackerMinerFS *object)
 	                  G_CALLBACK (task_pool_limit_reached_notify_cb), object);
 
 	priv->quark_ignore_file = g_quark_from_static_string ("tracker-ignore-file");
+	priv->quark_remove_file = g_quark_from_static_string ("tracker-remove-file");
 	priv->quark_directory_found_crawling = g_quark_from_static_string ("tracker-directory-found-crawling");
 	priv->quark_attribute_updated = g_quark_from_static_string ("tracker-attribute-updated");
 	priv->quark_reentry_counter = g_quark_from_static_string ("tracker-reentry-counter");
@@ -1319,6 +1321,7 @@ sparql_buffer_task_finished_cb (GObject      *object,
 	TrackerMinerFSPrivate *priv;
 	TrackerTask *task;
 	GFile *task_file;
+	gboolean remove_file;
 	GError *error = NULL;
 
 	fs = user_data;
@@ -1335,7 +1338,10 @@ sparql_buffer_task_finished_cb (GObject      *object,
 
 	task_file = tracker_task_get_file (task);
 
-	tracker_file_notifier_invalidate_file_iri (priv->file_notifier, task_file, FALSE);
+	/* In case of file removal, invalidate files iri recursively */
+	remove_file = GPOINTER_TO_INT (g_object_steal_qdata (G_OBJECT (task_file),
+	                                                     priv->quark_remove_file));
+	tracker_file_notifier_invalidate_file_iri (priv->file_notifier, task_file, remove_file);
 
 	if (item_queue_is_blocked_by_file (fs, task_file)) {
 		g_object_unref (priv->item_queue_blocker);
@@ -1635,6 +1641,10 @@ item_remove (TrackerMinerFS *fs,
 		tracker_media_art_queue_remove (uri, NULL);
 #endif
 	}
+
+	g_object_set_qdata (G_OBJECT (file),
+	                    fs->priv->quark_remove_file,
+	                    GINT_TO_POINTER (TRUE));
 
 	builder = tracker_sparql_builder_new_update ();
 	g_signal_emit (fs, signals[REMOVE_FILE], 0,
