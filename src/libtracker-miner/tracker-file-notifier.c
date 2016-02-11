@@ -1110,7 +1110,6 @@ monitor_item_deleted_cb (TrackerMonitor *monitor,
 {
 	TrackerFileNotifier *notifier = user_data;
 	TrackerFileNotifierPrivate *priv = notifier->priv;
-	GFile *canonical;
 	GFileType file_type;
 
 	file_type = (is_directory) ? G_FILE_TYPE_DIRECTORY : G_FILE_TYPE_REGULAR;
@@ -1166,14 +1165,22 @@ monitor_item_deleted_cb (TrackerMonitor *monitor,
 	}
 
 	/* Fetch the interned copy */
-	canonical = tracker_file_system_get_file (priv->file_system,
-	                                          file, file_type, NULL);
-	g_signal_emit (notifier, signals[FILE_DELETED], 0, canonical);
+	file = tracker_file_system_get_file (priv->file_system,
+	                                     file, file_type, NULL);
+
+	/* tracker_file_system_forget_files() might already have been
+	 * called on this file. In this case, the object might become
+	 * invalid when returning from g_signal_emit(). Take a
+	 * reference in order to prevent that.
+	 */
+	g_object_ref (file);
+	g_signal_emit (notifier, signals[FILE_DELETED], 0, file);
 
 	/* Remove the file from the cache (works recursively for directories) */
 	tracker_file_system_forget_files (priv->file_system,
 	                                  file,
 	                                  G_FILE_TYPE_UNKNOWN);
+	g_object_unref (file);
 }
 
 static void
