@@ -272,26 +272,24 @@ file_notifier_traverse_tree_foreach (GFile    *file,
 	TrackerFileNotifier *notifier;
 	TrackerFileNotifierPrivate *priv;
 	guint64 *store_mtime, *disk_mtime;
-	GFile *current_root;
 	GFileType file_type;
 
 	notifier = user_data;
 	priv = notifier->priv;
-	current_root = priv->current_index_root->current_dir;
 
-	/* If we're crawling over a subdirectory of a root index, it's been
-	 * already notified in the crawling op that made it processed, so avoid
-	 * it here again.
+	file_type = tracker_file_system_get_file_type (priv->file_system, file);
+
+	/* If we're crawling over a subdirectory that still needs to be crawled,
+	 * avoid notifying it here. It will be notified after being crawled.
 	 */
-	if (current_root == file &&
-	    current_root != priv->current_index_root->root)
+	if (file_type == G_FILE_TYPE_DIRECTORY &&
+	    g_queue_find (priv->current_index_root->pending_dirs, file))
 		return FALSE;
 
 	store_mtime = tracker_file_system_get_property (priv->file_system, file,
 	                                                quark_property_store_mtime);
 	disk_mtime = tracker_file_system_get_property (priv->file_system, file,
 	                                               quark_property_filesystem_mtime);
-	file_type = tracker_file_system_get_file_type (priv->file_system, file);
 
 	if (store_mtime && !disk_mtime) {
 		/* In store but not in disk, delete */
