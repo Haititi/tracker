@@ -706,7 +706,8 @@ sparql_contents_compose_query (GFile **directories,
 {
 	GString *str;
 	gchar *uri;
-	gint i = 0;
+	gint i;
+	gboolean first = TRUE;
 
 	str = g_string_new ("SELECT nie:url(?u) ?u nfo:fileLastModified(?u) {"
 			    " ?u nfo:belongsToContainer ?f . ?f nie:url ?url ."
@@ -715,7 +716,9 @@ sparql_contents_compose_query (GFile **directories,
 		if (g_queue_find (filter, directories[i]))
 			continue;
 
-		if (i != 0)
+		if (first)
+			first = FALSE;
+		else
 			g_string_append_c (str, ',');
 
 		uri = g_file_get_uri (directories[i]);
