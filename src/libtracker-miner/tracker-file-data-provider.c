@@ -29,7 +29,6 @@ static void tracker_file_data_provider_file_iface_init (TrackerDataProviderIface
 
 struct _TrackerFileDataProvider {
 	GObject parent_instance;
-	TrackerIndexingTree *indexing_tree;
 	TrackerMonitor *monitor;
 };
 
@@ -61,10 +60,6 @@ static void
 tracker_file_data_provider_finalize (GObject *object)
 {
 	TrackerFileDataProvider *fdp = TRACKER_FILE_DATA_PROVIDER (object);
-
-	if (fdp->indexing_tree) {
-		g_object_unref (fdp->indexing_tree);
-	}
 
 	if (fdp->monitor) {
 		g_object_unref (fdp->monitor);
@@ -455,19 +450,11 @@ file_data_provider_set_indexing_tree (TrackerDataProvider  *data_provider,
 {
 	TrackerFileDataProvider *fdp;
 
-	g_return_val_if_fail (TRACKER_IS_FILE_DATA_PROVIDER (data_provider), NULL);
+	g_return_val_if_fail (TRACKER_IS_FILE_DATA_PROVIDER (data_provider), FALSE);
 
 	fdp = TRACKER_FILE_DATA_PROVIDER (data_provider);
 
-	if (indexing_tree) {
-		g_object_ref (indexing_tree);
-	}
-
-	if (fdp->indexing_tree) {
-		g_object_unref (fdp->indexing_tree);
-	}
-
-	fdp->indexing_tree = indexing_tree;
+	tracker_monitor_set_indexing_tree(fdp->monitor, indexing_tree);
 
 	return TRUE;
 }
@@ -482,7 +469,7 @@ file_data_provider_get_indexing_tree (TrackerDataProvider  *data_provider,
 
 	fdp = TRACKER_FILE_DATA_PROVIDER (data_provider);
 
-	return fdp->indexing_tree;
+	return tracker_monitor_get_indexing_tree(fdp->monitor);
 }
 
 static void
