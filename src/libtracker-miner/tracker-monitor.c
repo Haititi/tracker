@@ -1448,14 +1448,15 @@ tracker_monitor_set_indexing_tree (TrackerMonitor      *monitor,
 	g_return_if_fail (TRACKER_IS_MONITOR (monitor));
 	g_return_if_fail (!tree || TRACKER_IS_INDEXING_TREE (tree));
 
-	if (monitor->priv->tree) {
-		g_object_unref (monitor->priv->tree);
-		monitor->priv->tree = NULL;
+	if (tree) {
+		g_object_ref (tree);
 	}
 
-	if (tree) {
-		monitor->priv->tree = g_object_ref (tree);
+	if (monitor->priv->tree) {
+		g_object_unref (monitor->priv->tree);
 	}
+
+	monitor->priv->tree = tree;
 }
 
 void
